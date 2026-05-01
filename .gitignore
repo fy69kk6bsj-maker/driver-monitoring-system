@@ -237,3 +237,12 @@ datasets/
 
 # Firebase
 firebase-adminsdk*.json
+
+.env
+*.h5
+*.pt
+*.onnx
+data/
+datasets/
+firebase-adminsdk*.json
+.DS_Store
