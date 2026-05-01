@@ -216,3 +216,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# 내가 추가한 거
+# 환경변수
+.env
+
+# 모델 파일
+*.h5
+*.pt
+*.onnx
+*.tflite
+
+# 데이터셋
+data/
+datasets/
+
+# Mac
+.DS_Store
+
+# Firebase
+firebase-adminsdk*.json
