@@ -299,3 +299,8 @@ POST /fusion/calculate  ← image + audio + gps 결과 합쳐서
 POST /decision/decide   ← fusion 결과 받은 후
 (필요 시) response_text → TTS 출력
 
+## LLM 모델
+- 모델: gpt-4o
+- 용도: 개인화 응답 생성
+- HIGH 위험 시: Rule-based 사용 (LLM 호출 안 함)
+- MEDIUM/LOW 위험 시: OpenAI API 호출

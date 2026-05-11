@@ -12,7 +12,7 @@ python-dotenv
 httpx
 webrtcvad
 xgboost
-anthropic
+openai
 google-cloud-speech
 numpy
 pandas
