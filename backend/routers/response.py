@@ -4,11 +4,16 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
-TEST_MODE = True  # API 키 발급 후 False로 변경
 load_dotenv()
 
 router = APIRouter()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+TEST_MODE = True
+
+# API 키 있을 때만 클라이언트 생성
+client = None
+if not TEST_MODE and os.getenv("OPENAI_API_KEY"):
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
 
 class ResponseRequest(BaseModel):
     user_id: str
@@ -27,28 +32,30 @@ class ResponseResult(BaseModel):
 @router.post("/generate", response_model=ResponseResult)
 def generate_response(data: ResponseRequest):
 
-    # HIGH면 LLM 안 씀 → Decision에서 이미 처리
+    if TEST_MODE:
+        return ResponseResult(
+            response_text="[테스트 모드] LLM 응답 생략",
+            llm_used_flag=False
+        )
+
     if data.risk_level == "high":
         return ResponseResult(
             response_text="",
             llm_used_flag=False
         )
 
-    # 사용자 프로필 꺼내기
     profile = data.user_profile
     music = profile.get("preferred_music_genre", "")
     style = profile.get("conversation_style", "casual")
     hobby = profile.get("hobby", "")
     anger_trigger = profile.get("anger_trigger_context", "")
 
-    # 시스템 프롬프트
     system_prompt = """당신은 운전자의 안전을 돕는 AI 동반자입니다.
 운전 중 대화하므로 반드시 짧고 자연스럽게 말해야 합니다.
 - 한 문장 또는 두 문장 이내로만 답하세요.
 - 딱딱하지 않고 친근하게 말하세요.
 - 운전에 집중할 수 있도록 가볍게 말하세요."""
 
-    # 상황별 프롬프트
     if data.action_type == "calming_prompt":
         user_prompt = f"""운전자가 분노 또는 스트레스 상태입니다.
 운전자 정보:
@@ -75,15 +82,7 @@ def generate_response(data: ResponseRequest):
     else:
         return ResponseResult(response_text="", llm_used_flag=False)
 
-    # OpenAI API 호출
     try:
-        # TEST_MODE일 때 LLM 호출 스킵
-    if TEST_MODE:
-        return ResponseResult(
-            response_text="[테스트 모드] LLM 응답 생략",
-            llm_used_flag=False
-        )
-    
         response = client.chat.completions.create(
             model="gpt-4o",
             max_tokens=100,
