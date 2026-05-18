@@ -1,32 +1,58 @@
-
 from fastapi import APIRouter
-from pydantic import BaseModel
+import os
+import pandas as pd
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 router = APIRouter()
 
-class GPSRequest(BaseModel):
-    latitude: float
-    longitude: float
-    driving_duration_min: float
-    user_id: str
-    session_id: str
+@router.get("/gps/test")
+def gps_test():
+    return {
+        "lat": 37.5665,
+        "lng": 126.9780,
+        "status": "GPS API SUCCESS"
+    }
 
-class GPSResponse(BaseModel):
-    speed_norm: float
-    traffic_density_score: float
-    driving_duration_norm: float
-    night_driving_risk: float
-    rest_area_distance_norm: float
-    nearest_rest_area: str
+@router.get("/gps/data")
+def get_gps_data():
+    df = pd.read_csv("gps_data.csv")
+    return df.to_dict(orient="records")
 
-@router.post("/analyze", response_model=GPSResponse)
-def analyze_gps(data: GPSRequest):
-    # TODO: 03번 구현
-    return GPSResponse(
-        speed_norm=0.0,
-        traffic_density_score=0.2,
-        driving_duration_norm=0.0,
-        night_driving_risk=0.0,
-        rest_area_distance_norm=0.0,
-        nearest_rest_area=""
-    )
+@router.get("/gps/traffic")
+def get_traffic_info():
+    api_key = os.getenv("TRAFFIC_API_KEY")
+
+    df = pd.read_csv("gps_data.csv")
+    latest = df.iloc[-1]
+
+    lat = float(latest["lat"])
+    lng = float(latest["lng"])
+
+    url = "https://openapi.its.go.kr:9443/trafficInfo"
+
+    params = {
+        "apiKey": api_key,
+        "type": "all",
+        "routeNo": "",
+        "drcType": "all",
+        "minX": lng - 0.02,
+        "maxX": lng + 0.02,
+        "minY": lat - 0.02,
+        "maxY": lat + 0.02,
+        "getType": "json"
+    }
+
+    response = requests.get(url, params=params, timeout=10)
+
+    return {
+        "latest_gps": {
+            "lat": lat,
+            "lng": lng
+        },
+        "request_url": response.url,
+        "status_code": response.status_code,
+        "traffic_response": response.json()
+    }
